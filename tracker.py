@@ -44,7 +44,15 @@ XP_LEVELS = [
 
 def get_snapshot_file(player_id):
     os.makedirs("./snapshots", exist_ok=True)
-    return f"./snapshots/{player_id}_snapshot.json"
+    path = f"./snapshots/{player_id}_snapshot.json"
+
+    # Create the file if it doesn't exist
+    if not os.path.exists(path):
+        with open(path, "w") as f:
+            json.dump({}, f, indent=2)
+
+    return path
+
 
 def fetch_data(player_id):
     url = f"https://players.tarkov.dev/pve/{player_id}.json"
@@ -296,7 +304,7 @@ async def track(ctx, nickname: str):
         await user.send(embeds=[updated_embed, overall_embed])
 
         # ✅ Let them know in server channel
-        await ctx.send(f"📬 <@{ctx.author.id}>, I’ve sent your stats via DM.")
+        await ctx.send(f"📬 <@{ctx.author.id}>, I’ve sent your stats for **{nickname}** via DM.")
 
     except Exception as e:
         await ctx.send(f"❌ Error during tracking: {e}")
@@ -305,11 +313,29 @@ async def track(ctx, nickname: str):
 @bot.command(name="untrack")
 async def untrack(ctx):
     discord_id = str(ctx.author.id)
+
     if discord_id in user_config:
+        # Get tracked player ID and nickname
+        tracked_player_id = user_config[discord_id]["player_id"]
+        nickname = "Unknown"
+
+        try:
+            index_data = requests.get("https://players.tarkov.dev/profile/index.json").json()
+            nickname = index_data.get(tracked_player_id, "Unknown")
+        except:
+            pass
+
+        # Delete snapshot file if it exists
+        snapshot_path = get_snapshot_file(tracked_player_id)
+        if os.path.exists(snapshot_path):
+            os.remove(snapshot_path)
+
+        # Remove from config and save
         del user_config[discord_id]
         save_user_config()
-        await ctx.send(f"❌ You have been removed from Tarkov stat tracking, <@{ctx.author.id}>.")
+
+        await ctx.send(f"❌ You have stopped tracking **{nickname}**, and the snapshot was deleted, <@{ctx.author.id}>.")
     else:
-        await ctx.send("⚠️ You are not currently being tracked.")
+        await ctx.send(f"⚠️ You are not currently tracking that player - **{nickname}**.")
 
 bot.run(DISCORD_TOKEN)
