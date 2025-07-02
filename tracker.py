@@ -398,8 +398,8 @@ async def statChannels():
 @bot.event
 async def on_ready():
     print(f"✅ Bot logged in as {bot.user}")
-    scheduler.add_job(daily_task, 'interval', hours=24)  # Set to every 24 hours
-    scheduler.add_job(statChannels, 'interval', hours=6)  # Set to every 6 hours
+    scheduler.add_job(daily_task, 'interval', hours=3)  # Set to every 24 hours
+    scheduler.add_job(statChannels, 'interval', hours=3)  # Set to every 6 hours
     scheduler.start()
     print("⏰ Scheduler started.")
     print("▶️ Running daily_task immediately...")
