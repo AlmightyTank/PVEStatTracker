@@ -278,23 +278,36 @@ def format_embed(data, diff, player_id, previous=None):
     updated_embed.add_field(name="Time Played (hrs)", value=f"```{annotate_change(time_played_hrs, prev_played_hrs)}```", inline=True)
 
     if diff["skills"]:
-        sorted_changes = sorted(diff["skills"], key=lambda s: s["diff"], reverse=True)[:5]
-        skill_lines = [
-            f"• {s['id']}: Level {int(s['from'] / 100)} → {int(s['to'] / 100)} (+{math.ceil(s['diff'] / 100)})"
-            for s in sorted_changes
+        filtered_changes = [
+            s for s in diff["skills"]
+            if int(s["from"] // 100) != int(s["to"] // 100)
         ]
-        updated_embed.add_field(name="🧠 Top Skill Changes", value=f"```{chr(10).join(skill_lines)}```", inline=False)
-    else:
-        updated_embed.add_field(name="🧠 Top Skill Changes", value="```No skill changes```", inline=False)
+
+        if filtered_changes:
+            sorted_changes = sorted(filtered_changes, key=lambda s: s["diff"], reverse=True)[:5]
+            skill_lines = [
+                f"• {s['id']}: Level {int(s['from'] // 100)} → {int(s['to'] // 100)} (+{int(s['to'] // 100 - s['from'] // 100)})"
+                for s in sorted_changes
+            ]
+            updated_embed.add_field(name="🧠 Top Skill Changes", value=f"```{chr(10).join(skill_lines)}```", inline=False)
+        else:
+            updated_embed.add_field(name="🧠 Top Skill Changes", value="```No skill level changes```", inline=False)
 
     if diff["mastery"]:
-        mastery_lines = [
-            f"• {m['id']}: {m['from']} → {m['to']} (+{m['diff']})"
-            for m in diff["mastery"]
+        filtered_mastery = [
+            m for m in diff["mastery"]
+            if int(m["from"]) != int(m["to"])
         ]
-        updated_embed.add_field(name="🔫 Weapon Mastery Changes", value=f"```{chr(10).join(mastery_lines)}```", inline=False)
-    else:
-        updated_embed.add_field(name="🔫 Weapon Mastery Changes", value="```No weapon mastery changes```", inline=False)
+
+        if filtered_mastery:
+            sorted_changes = sorted(filtered_changes, key=lambda m: m["diff"], reverse=True)[:5]
+            mastery_lines = [
+                f"• {m['id']}: EXP {int(m['from'])} → {int(m['to'])} (+{int(m['to'] - m['from'])})"
+                for m in filtered_mastery
+            ]
+            updated_embed.add_field(name="🔫 Weapon Mastery Changes", value=f"```{chr(10).join(mastery_lines)}```", inline=False)
+        else:
+            updated_embed.add_field(name="🔫 Weapon Mastery Changes", value="```No weapon mastery level changes```", inline=False)
 
     updated_embed.set_footer(text="Tracked via PVE Stats Tracker and Tarkov.Dev")
 
